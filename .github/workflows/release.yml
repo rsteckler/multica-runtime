@@ -4,12 +4,14 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
+  # Manual override for testing a different multica CLI version without
+  # editing the Dockerfile / cutting a new image tag.
   workflow_dispatch:
     inputs:
       multica_version:
-        description: "Multica CLI version (no leading v)"
+        description: "Override MULTICA_VERSION build-arg (leave blank to use the Dockerfile default)"
         required: false
-        default: "0.2.29"
+        default: ""
 
 permissions:
   contents: read
@@ -33,9 +35,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Tag strategy:
-      #   - tag push v1.2.3        → :v1.2.3 + :latest
-      #   - main push              → :main + :sha-<short>
-      #   - manual dispatch        → :dispatch-<sha>
+      #   - tag push v1.2.3 → :v1.2.3 + :latest
+      #   - main push       → :main + :sha-<short>
+      #
+      # The git tag is the *image* version (independent from the multica
+      # CLI version baked inside it). To upgrade the baked multica CLI,
+      # edit the Dockerfile's `ARG MULTICA_VERSION=...` and push a new
+      # image tag. Decoupling them avoids the trap where the image tag
+      # has to match a real multica release.
       - id: meta
         uses: docker/metadata-action@v5
         with:
@@ -46,25 +53,15 @@ jobs:
             type=sha,prefix=sha-
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
-      # MULTICA_VERSION defaults from the Dockerfile ARG, but a tag push
-      # like v0.2.32 should rebuild against multica 0.2.32. Strip the
-      # leading "v" for the build-arg.
-      - id: multica
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            v="${GITHUB_REF#refs/tags/v}"
-          else
-            v="${{ github.event.inputs.multica_version || '0.2.29' }}"
-          fi
-          echo "version=$v" >> "$GITHUB_OUTPUT"
-
       - uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # build-args is only set when the manual-dispatch input is
+          # non-empty. When empty, the Dockerfile ARG default wins.
           build-args: |
-            MULTICA_VERSION=${{ steps.multica.outputs.version }}
+            ${{ github.event.inputs.multica_version && format('MULTICA_VERSION={0}', github.event.inputs.multica_version) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
