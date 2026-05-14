@@ -109,11 +109,13 @@ RUN ARCH=$(dpkg --print-architecture) \
 
 # ---------------------------------------------------------------------------
 # Non-root user. UID/GID 1000 matches the helm chart's fsGroup so PVCs are
-# writable. NOPASSWD sudo is intentional — agents occasionally need apt-get
-# to install something niche; the user explicitly opted into a "let it
-# install things" runtime. Lock this down if you don't want that.
+# writable. ubuntu:24.04 ships a default `ubuntu` user at uid/gid 1000 —
+# delete it first so the GID is free. NOPASSWD sudo is intentional —
+# agents occasionally need apt-get to install something niche; the user
+# explicitly opted into a "let it install things" runtime.
 # ---------------------------------------------------------------------------
-RUN groupadd --gid 1000 multica \
+RUN userdel --remove ubuntu 2>/dev/null || true \
+    && groupadd --gid 1000 multica \
     && useradd --uid 1000 --gid 1000 --create-home --shell /bin/bash multica \
     && echo "multica ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/multica \
     && chmod 0440 /etc/sudoers.d/multica \
