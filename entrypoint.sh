@@ -66,7 +66,13 @@ fi
 # anyway — the secret is the source of truth.
 if [[ -n "${MULTICA_SIGNING_KEY:-}" && -n "${MULTICA_GIT_EMAIL:-}" ]]; then
     install -d -m 700 "${HOME}/.ssh"
-    printf '%s\n' "${MULTICA_SIGNING_KEY}" > "${HOME}/.ssh/multica_signing"
+    # Strip trailing whitespace from every line — OpenSSH private keys
+    # are byte-strict, and trailing spaces sneak in easily when the key
+    # is pasted through a YAML literal block. Without this guard, even
+    # one stray space on the BEGIN line makes ssh-keygen reject the key.
+    printf '%s\n' "${MULTICA_SIGNING_KEY}" \
+        | sed -E 's/[[:space:]]+$//' \
+        > "${HOME}/.ssh/multica_signing"
     chmod 600 "${HOME}/.ssh/multica_signing"
     # ssh-keygen -Y sign refuses keys without a trailing newline on some
     # OpenSSH versions; printf already added one above. Generate the .pub
