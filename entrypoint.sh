@@ -53,4 +53,33 @@ if [[ -n "${GH_TOKEN:-}" ]]; then
     export GITHUB_TOKEN="${GITHUB_TOKEN:-$GH_TOKEN}"
 fi
 
+# Commit signing. When MULTICA_SIGNING_KEY (private SSH key, in OpenSSH
+# format) and MULTICA_GIT_EMAIL are provided, configure git to sign every
+# commit. GitHub renders these as "Verified" provided:
+#   1. The matching public key is registered on the user's GitHub account
+#      as a *Signing key* (NOT an authentication key — separate section
+#      at github.com/settings/ssh/new).
+#   2. MULTICA_GIT_EMAIL matches a verified email on that account.
+#
+# The key is rewritten on every container start so rotations propagate
+# without manual intervention. ~/.ssh is on the PVC, but we overwrite it
+# anyway — the secret is the source of truth.
+if [[ -n "${MULTICA_SIGNING_KEY:-}" && -n "${MULTICA_GIT_EMAIL:-}" ]]; then
+    install -d -m 700 "${HOME}/.ssh"
+    printf '%s\n' "${MULTICA_SIGNING_KEY}" > "${HOME}/.ssh/multica_signing"
+    chmod 600 "${HOME}/.ssh/multica_signing"
+    # ssh-keygen -Y sign refuses keys without a trailing newline on some
+    # OpenSSH versions; printf already added one above. Generate the .pub
+    # so git can find it for SSH signature verification when needed.
+    ssh-keygen -y -f "${HOME}/.ssh/multica_signing" > "${HOME}/.ssh/multica_signing.pub" 2>/dev/null \
+        || echo "warning: failed to derive public key from MULTICA_SIGNING_KEY" >&2
+
+    git config --global user.email "${MULTICA_GIT_EMAIL}"
+    git config --global user.name "${MULTICA_GIT_NAME:-Multica Daemon}"
+    git config --global gpg.format ssh
+    git config --global user.signingkey "${HOME}/.ssh/multica_signing"
+    git config --global commit.gpgsign true
+    git config --global tag.gpgsign true
+fi
+
 exec multica daemon start --foreground "$@"
