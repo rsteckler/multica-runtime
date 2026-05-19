@@ -97,7 +97,7 @@ RUN python3 -m venv /opt/modal-venv \
 # Multica CLI — pinned release tarball from GitHub. The daemon's wire format
 # tracks the server, so this version should match the server image's tag.
 # ---------------------------------------------------------------------------
-ARG MULTICA_VERSION=0.2.29
+ARG MULTICA_VERSION=0.3.1
 RUN ARCH=$(dpkg --print-architecture) \
     && case "$ARCH" in amd64) MARCH=amd64 ;; arm64) MARCH=arm64 ;; *) echo "unsupported arch $ARCH" >&2; exit 1 ;; esac \
     && curl -fsSL "https://github.com/multica-ai/multica/releases/download/v${MULTICA_VERSION}/multica-cli-${MULTICA_VERSION}-linux-${MARCH}.tar.gz" \
