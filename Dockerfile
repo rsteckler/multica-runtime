@@ -3,10 +3,10 @@
 # multica-runtime — container image that runs the Multica agent daemon in k8s.
 #
 # Bakes in the stable, well-known agent toolchain (claude code, gh, railway,
-# render, modal, posthog-cli, plus standard build/dev tools). Niche CLIs
-# that aren't baked can still be installed at runtime into $HOME/.local/bin
-# — that path is on a PVC in the helm chart, so installs persist across
-# pod restarts.
+# render, modal, posthog-cli, docker CLI, plus standard build/dev tools).
+# Niche CLIs that aren't baked can still be installed at runtime into
+# $HOME/.local/bin — that path is on a PVC in the helm chart, so installs
+# persist across pod restarts.
 #
 # Pinned to a specific Multica release so the daemon's wire protocol matches
 # the server it's talking to. Bump MULTICA_VERSION (and tag this image
@@ -42,6 +42,22 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/* \
     && corepack enable
+
+# ---------------------------------------------------------------------------
+# Docker CLI — client only (no daemon). The daemon runs as a dind sidecar
+# in the helm chart; this image talks to it via DOCKER_HOST=tcp://localhost:2375.
+# Required for agent tasks that use testcontainers / spawn containers for
+# integration tests.
+# ---------------------------------------------------------------------------
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+        -o /etc/apt/keyrings/docker.asc \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+        > /etc/apt/sources.list.d/docker.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends docker-ce-cli \
+    && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
 # GitHub CLI — official apt repo.

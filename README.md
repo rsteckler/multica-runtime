@@ -18,6 +18,7 @@ The image is consumed by the homelab Helm chart at
 | `gh` | `cli.github.com` apt repo | GitHub CLI |
 | `railway` | `npm i -g @railway/cli` | Railway deploys |
 | `render` | GitHub release (pinned via `RENDER_CLI_VERSION` build-arg) | Render deploys |
+| `docker` | `download.docker.com` apt repo (`docker-ce-cli`) | Talks to dind sidecar (no daemon in this image) |
 | `modal` | `pip install modal` (in `/opt/modal-venv`) | Modal deploys |
 | `posthog-cli` | `npm i -g posthog-cli` | PostHog admin |
 | `node` 22 LTS | NodeSource apt repo | Node toolchain |
