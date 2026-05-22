@@ -3,7 +3,7 @@
 # multica-runtime — container image that runs the Multica agent daemon in k8s.
 #
 # Bakes in the stable, well-known agent toolchain (claude code, gh, railway,
-# render, modal, posthog-cli, docker CLI, plus standard build/dev tools).
+# render, modal, posthog-cli, axiom, docker CLI, plus standard build/dev tools).
 # Niche CLIs that aren't baked can still be installed at runtime into
 # $HOME/.local/bin — that path is on a PVC in the helm chart, so installs
 # persist across pod restarts.
@@ -109,6 +109,20 @@ RUN python3 -m venv /opt/modal-venv \
     && /opt/modal-venv/bin/pip install --no-cache-dir --upgrade pip \
     && /opt/modal-venv/bin/pip install --no-cache-dir modal \
     && ln -s /opt/modal-venv/bin/modal /usr/local/bin/modal
+
+# ---------------------------------------------------------------------------
+# Axiom CLI — pinned release tarball from GitHub. Authenticates via the
+# AXIOM_TOKEN env var (and AXIOM_ORG_ID when using a personal token).
+# ---------------------------------------------------------------------------
+ARG AXIOM_CLI_VERSION=0.16.0
+RUN ARCH=$(dpkg --print-architecture) \
+    && case "$ARCH" in amd64) AARCH=amd64 ;; arm64) AARCH=arm64 ;; *) echo "unsupported arch $ARCH" >&2; exit 1 ;; esac \
+    && curl -fsSL "https://github.com/axiomhq/cli/releases/download/v${AXIOM_CLI_VERSION}/axiom_${AXIOM_CLI_VERSION}_linux_${AARCH}.tar.gz" \
+        -o /tmp/axiom.tgz \
+    && tar -C /tmp -xzf /tmp/axiom.tgz "axiom_${AXIOM_CLI_VERSION}_linux_${AARCH}/axiom" \
+    && install -m 0755 "/tmp/axiom_${AXIOM_CLI_VERSION}_linux_${AARCH}/axiom" /usr/local/bin/axiom \
+    && rm -rf /tmp/axiom.tgz "/tmp/axiom_${AXIOM_CLI_VERSION}_linux_${AARCH}" \
+    && axiom version
 
 # ---------------------------------------------------------------------------
 # Render CLI — pinned release zip from GitHub. Authenticates via the

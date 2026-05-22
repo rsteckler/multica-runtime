@@ -21,6 +21,7 @@ The image is consumed by the homelab Helm chart at
 | `docker` | `download.docker.com` apt repo (`docker-ce-cli`) | Talks to dind sidecar (no daemon in this image) |
 | `modal` | `pip install modal` (in `/opt/modal-venv`) | Modal deploys |
 | `posthog-cli` | `npm i -g posthog-cli` | PostHog admin |
+| `axiom` | GitHub release (pinned via `AXIOM_CLI_VERSION` build-arg) | Axiom log queries / ingest |
 | `node` 22 LTS | NodeSource apt repo | Node toolchain |
 | `python3` + `uv` | apt + Astral installer | Python toolchain |
 | `go` 1.26 | go.dev tarball | Go toolchain |
@@ -40,6 +41,8 @@ all future sessions see it.
 | `MULTICA_SERVER_URL` | yes | WebSocket URL of the backend, e.g. `ws://homestack-multica-backend:8080/ws` |
 | `ANTHROPIC_API_KEY` | recommended | Used by Claude Code for non-interactive auth |
 | `RENDER_API_KEY` | optional | Used by `render` CLI for non-interactive auth |
+| `AXIOM_TOKEN` | optional | Used by `axiom` CLI for non-interactive auth |
+| `AXIOM_ORG_ID` | optional | Required alongside `AXIOM_TOKEN` when using a personal token (`xapt-...`) |
 | `MULTICA_AGENT_RUNTIME_NAME` | optional | Display name in Multica's runtime list (default `Local Agent`) |
 | `MULTICA_DAEMON_DEVICE_NAME` | optional | Display name for this device |
 | `MULTICA_WORKSPACES_ROOT` | optional | Task workspace root (default `~/multica_workspaces`) |
