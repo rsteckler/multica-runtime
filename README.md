@@ -17,6 +17,7 @@ The image is consumed by the homelab Helm chart at
 | `claude` | `npm i -g @anthropic-ai/claude-code` | Claude Code agent |
 | `gh` | `cli.github.com` apt repo | GitHub CLI |
 | `railway` | `npm i -g @railway/cli` | Railway deploys |
+| `render` | GitHub release (pinned via `RENDER_CLI_VERSION` build-arg) | Render deploys |
 | `modal` | `pip install modal` (in `/opt/modal-venv`) | Modal deploys |
 | `posthog-cli` | `npm i -g posthog-cli` | PostHog admin |
 | `node` 22 LTS | NodeSource apt repo | Node toolchain |
@@ -37,6 +38,7 @@ all future sessions see it.
 | `MULTICA_TOKEN` | yes | Multica personal access token (`mul_...`) |
 | `MULTICA_SERVER_URL` | yes | WebSocket URL of the backend, e.g. `ws://homestack-multica-backend:8080/ws` |
 | `ANTHROPIC_API_KEY` | recommended | Used by Claude Code for non-interactive auth |
+| `RENDER_API_KEY` | optional | Used by `render` CLI for non-interactive auth |
 | `MULTICA_AGENT_RUNTIME_NAME` | optional | Display name in Multica's runtime list (default `Local Agent`) |
 | `MULTICA_DAEMON_DEVICE_NAME` | optional | Display name for this device |
 | `MULTICA_WORKSPACES_ROOT` | optional | Task workspace root (default `~/multica_workspaces`) |

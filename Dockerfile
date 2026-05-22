@@ -3,9 +3,10 @@
 # multica-runtime — container image that runs the Multica agent daemon in k8s.
 #
 # Bakes in the stable, well-known agent toolchain (claude code, gh, railway,
-# modal, posthog-cli, plus standard build/dev tools). Niche CLIs that aren't
-# baked can still be installed at runtime into $HOME/.local/bin — that path
-# is on a PVC in the helm chart, so installs persist across pod restarts.
+# render, modal, posthog-cli, plus standard build/dev tools). Niche CLIs
+# that aren't baked can still be installed at runtime into $HOME/.local/bin
+# — that path is on a PVC in the helm chart, so installs persist across
+# pod restarts.
 #
 # Pinned to a specific Multica release so the daemon's wire protocol matches
 # the server it's talking to. Bump MULTICA_VERSION (and tag this image
@@ -92,6 +93,20 @@ RUN python3 -m venv /opt/modal-venv \
     && /opt/modal-venv/bin/pip install --no-cache-dir --upgrade pip \
     && /opt/modal-venv/bin/pip install --no-cache-dir modal \
     && ln -s /opt/modal-venv/bin/modal /usr/local/bin/modal
+
+# ---------------------------------------------------------------------------
+# Render CLI — pinned release zip from GitHub. Authenticates via the
+# RENDER_API_KEY env var (no interactive `render login` needed).
+# ---------------------------------------------------------------------------
+ARG RENDER_CLI_VERSION=2.18.0
+RUN ARCH=$(dpkg --print-architecture) \
+    && case "$ARCH" in amd64) RARCH=amd64 ;; arm64) RARCH=arm64 ;; *) echo "unsupported arch $ARCH" >&2; exit 1 ;; esac \
+    && curl -fsSL "https://github.com/render-oss/cli/releases/download/v${RENDER_CLI_VERSION}/cli_${RENDER_CLI_VERSION}_linux_${RARCH}.zip" \
+        -o /tmp/render.zip \
+    && unzip -q /tmp/render.zip "cli_v${RENDER_CLI_VERSION}" -d /tmp \
+    && install -m 0755 "/tmp/cli_v${RENDER_CLI_VERSION}" /usr/local/bin/render \
+    && rm -rf /tmp/render.zip "/tmp/cli_v${RENDER_CLI_VERSION}" \
+    && render --version
 
 # ---------------------------------------------------------------------------
 # Multica CLI — pinned release tarball from GitHub. The daemon's wire format
